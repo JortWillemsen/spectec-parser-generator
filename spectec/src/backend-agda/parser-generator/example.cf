@@ -1,0 +1,34 @@
+EAdd. Exp  ::= Exp  "+" Exp1 ;
+ESub. Exp  ::= Exp  "-" Exp1 ;
+EMul. Exp1 ::= Exp1 "*" Exp2 ;
+EDiv. Exp1 ::= Exp1 "/" Exp2 ;
+EInt. Exp2 ::= Integer ;
+
+coercions Exp 2 ;
+
+
+{-
+## Reserved words
+
+char         coercions  comment
+digit
+entrypoints  eps
+internal
+layout       letter     lower
+nonempty
+position
+rules
+separator    stop
+terminator   token      toplevel
+upper
+
+
+## Symbols
+
+; . ::=
+[ ] _
+( : )
+, | -
+* + ?
+{ }
+-}
