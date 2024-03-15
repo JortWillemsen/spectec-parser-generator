@@ -1,0 +1,5 @@
+(library
+  (name backend_agda_generator)
+  (libraries util il)
+  (modules_without_implementation lbnf)
+)
