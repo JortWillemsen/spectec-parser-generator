@@ -4,3 +4,7 @@
 **/_build
 **/_output
 *.swp
+
+
+# SMFCS
+**/output-bnfc/**
