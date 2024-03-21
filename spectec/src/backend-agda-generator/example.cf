@@ -1,34 +1,16 @@
-EAdd. Exp  ::= Exp  "+" Exp1 ;
-ESub. Exp  ::= Exp  "-" Exp1 ;
-EMul. Exp1 ::= Exp1 "*" Exp2 ;
-EDiv. Exp1 ::= Exp1 "/" Exp2 ;
-EInt. Exp2 ::= Integer ;
+Float. Float ::= Integer;
 
-coercions Exp 2 ;
+I32. NumType ::= Integer;
+I64. NumType ::= Integer;
+F32. NumType ::= Float;
+F64. NumType ::= Float;
 
+ADD. BinOp ::= "Add";
+SUM. BinOp ::= "Sum";
+MUL. BinOp ::= "Mul";
+DIV. BinOp ::= "Div";
 
-{-
-## Reserved words
+ArithmeticOp. ArithmeticOp ::= "(" NumType "." BinOp ")";
 
-char         coercions  comment
-digit
-entrypoints  eps
-internal
-layout       letter     lower
-nonempty
-position
-rules
-separator    stop
-terminator   token      toplevel
-upper
-
-
-## Symbols
-
-; . ::=
-[ ] _
-( : )
-, | -
-* + ?
-{ }
--}
+Zero. Bit ::= "0";
+One. Bit  ::= "1"; 
