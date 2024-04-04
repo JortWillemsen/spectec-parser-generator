@@ -2,9 +2,8 @@
 
 
 # Run SpecTec agda generator to create LBNF
-# ../watsup --generate-agda test.watsup -o test-bnfc/aaaa.cf
-# ../watsup --generate-agda  ../spec/wasm-3.0/*.watsup -o test-bnfc/aaaa.cf
-../watsup --generate-agda  minispec/*.watsup -o test-bnfc/aaaa.cf
+# ../watsup --print-el --generate-agda test.watsup -o test-bnfc/aaaa.cf
+../watsup --print-el --generate-agda  ../spec/wasm-3.0/*.watsup -o test-bnfc/aaaa.cf
 
 # Move to /test-bnfc
 cd test-bnfc

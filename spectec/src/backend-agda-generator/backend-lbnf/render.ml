@@ -2,10 +2,10 @@
 open Util
 open Source
 open El.Ast
-(* open El.Convert
-open Config *)
-
-
+(* 
+open El.Convert
+open Config 
+*)
 
 (* Haskell like function application *)
 let ($) f x = f x
@@ -13,6 +13,8 @@ let ($) f x = f x
 (* 
   Utility functions  
 *)
+
+let format_s template = Printf.sprintf template
 
 let pop_list = function 
   | []      -> []
@@ -26,11 +28,11 @@ let rec hasUnderscore = function
   | (_::xs)  -> false || hasUnderscore xs
 
 let rec concat_map_nl sep br f = function
-  | [] -> ""
-  | [Elem x] -> f x
+  | []           -> ""
+  | [Elem x]     -> f x
   | (Elem x)::xs -> f x ^ sep ^ concat_map_nl sep br f xs
-  | Nl::xs -> br ^ concat_map_nl sep br f xs
-
+  | Nl::xs       -> br ^ concat_map_nl sep br f xs
+  
   
 
 (* 
@@ -38,18 +40,22 @@ Translation rules
 *)
 module TranslationRules = struct
   let capitalize_rule x = String.capitalize_ascii x
-  let underscore_rule x = if hasUnderscore (str_to_list x) then x ^ "0" else x
+  let no_underscore_end_rule x = if hasUnderscore (str_to_list x) then x ^ "0" else x
 
   (* Apply all translation rules *)
-  let applyAll x = capitalize_rule $ underscore_rule x
+  let applyAll x = capitalize_rule $ no_underscore_end_rule x
 end
 
 (* 
 Render functions  
 *)
 
+let exp_to_string x = let open El.Print in string_of_exp x
+
 (* val render_atom   : atom -> string *)
 let render_atom atom = let open Il.Atom in string_of_atom atom
+
+
 
 (* val render_typ    : typ -> string *)
 
@@ -62,44 +68,94 @@ let render_atom atom = let open Il.Atom in string_of_atom atom
 (* val render_defs   : def list -> string *)
 
 (* Converts numtype to their respective LBNF primitives *)
+
+let render_typenum (e, _) = exp_to_string e 
+
 let render_numtyp = function 
   | NatT  -> "Integer" (* `nat` *)
   | IntT  -> "Integer" (* `int` *)
   | RatT  -> "Double"  (* `rat` *)
   | RealT -> "Double"  (* `real` *)
-  
+
+let render_iter = function 
+  | Opt                 -> "?" (* `?` *)
+  | List                -> "*" (* `*` *)
+  | List1               -> "+" (* `+` *)
+  | ListN (exp, None)   -> "^" ^ exp_to_string exp         (* `^` exp *)
+  | ListN (exp, Some x) -> "^" ^ exp_to_string exp ^ x.it  (* `^` exp *)
+
+let to_cat id1                     = TranslationRules.applyAll id1
+let to_label cat lbl               = format_s "%s_%s" cat (TranslationRules.no_underscore_end_rule lbl)
+let render_line_total cat lbl prod = format_s "%s. \t%s ::= %s ;" lbl cat prod
+let render_line id1 lbl prod       = 
+  let cap_id = to_cat id1 in 
+  let label = to_label cap_id lbl in 
+  render_line_total cap_id label prod
+
+let rec render_typ2 = function
+  | VarT (id1, _)      -> to_cat id1.it
+  | BoolT              -> "bool"
+  | NumT num_t         -> render_numtyp num_t
+  | TextT              -> "String"
+  | ParenT _           -> "ParenT_"
+  | TupT _             -> "TupT"
+  | IterT (typ', iter) -> render_typ2 typ'.it ^ render_iter iter
+  | StrT _             -> "StrT"
+  | ConT _             -> "ConT"
+  | RangeT _           -> "RangeT"
+  | InfixT _           -> "InfixT"
+  | BrackT _           -> "BrackT"
+  | CaseT _            -> "CaseT"
+  | AtomT atom'        -> TranslationRules.applyAll (render_atom atom')
+  | SeqT typlist       -> 
+    let fold_typs = List.fold_left (fun acc x -> render_typ2 x.it ^ " " ^ acc) ""
+    in fold_typs $ pop_list typlist (* TODO Check this does not pop unnecessarily *)
+
 (* Converts typ values to their LBNF representation *)
-let rec render_typ id1 = function
-  | VarT _     ->  "VarT"
-  | BoolT      -> "BoolT"
-  | NumT num_t -> render_numtyp num_t
-  | TextT      -> "String"
-  | ParenT _   -> "ParenT_"
-  | TupT _     -> "TupT"
-  | IterT _    -> "IterT"
+and render_typ id1 = 
+  let pass_through x = render_line id1 id1 (render_typ2 x) in 
+  function
+  | VarT _ as x     -> pass_through x
+  | BoolT           -> pass_through BoolT
+  | NumT x          -> render_line id1 id1 (render_numtyp x) 
+  | TextT           -> pass_through TextT
+  | ParenT _ as x   -> pass_through x
+  | TupT _ as x     -> pass_through x
+  | IterT _ as x    -> pass_through x
   (* The forms below are only allowed in type definitions *)
-  | StrT _     -> "StrT"
-  | ConT _       -> "ConT"
-  | RangeT _     -> "RangeT"
-  | InfixT _     -> "InfixT"
-  | BrackT _     -> "BrackT"
+  | StrT _ -> "StrT"
+  | ConT ((typ', _), _) -> render_line id1 id1 (render_typ2 typ'.it)
+  | RangeT l       -> render_line id1 id1 ("(" ^ (concat_map_nl " | " "" render_typenum l) ^ ")" )
+  (* | RangeT _       -> "RangeT" *)
+  | InfixT _       -> "InfixT"
+  | BrackT _       -> "BrackT"
   | CaseT (_, _, typcases, _) -> 
-    let cap_id           = TranslationRules.applyAll id1 in 
-    let fn (atom', (typ', _), _) =  (*  atom * (typ * prem nl_list) * hint list  *)
-      let label = Printf.sprintf "%s_%s" cap_id (TranslationRules.underscore_rule $ render_atom atom') in 
-      let prod  = render_typ "" typ'.it in
-      Printf.sprintf "%s. \t\t%s ::= %s ; \n" label cap_id prod in
+    let fn (atom', (typ', _), _) = render_line id1 (render_atom atom') (render_typ2 typ'.it) in (*  atom * (typ * prem nl_list) * hint list  *)
     concat_map_nl "" "\n" fn typcases
   | AtomT atom'  -> TranslationRules.applyAll (render_atom atom')
   | SeqT typlist -> 
-    let fold_typs = List.fold_left (fun acc x -> render_typ "" x.it ^ " " ^ acc) ""
+    let fold_typs = List.fold_left (fun acc x -> render_typ2 x.it ^ " " ^ acc) ""
     in fold_typs $ pop_list typlist (* TODO Check this does not pop unnecessarily *)
 
+and render_args xs = 
+  
+  (* List.fold_left (fun acc x -> render_typ2 x.it ^ " " ^ acc) "" *)
+  
+  concat_map_nl ", " "" render_arg xs
+
+and render_arg = function 
+  | ExpA  x -> exp_to_string x     (* exp *)
+  | TypA  x -> render_typ2 x.it    (* `syntax` typ *)
+  | GramA _ -> "__SomeGrammar__" (* `grammar` sym *)
+
+
 (* Converts script to LBNF *)
-let rec render_script = function
+and render_script = function
   | []    -> ""
   | d::ds -> match d.it with
-             | TypD (id1, _, _, typs, _) -> render_typ id1.it typs.it ^ "\n\n" ^ render_script ds
+             | TypD (id1, _, args, typs, _) -> 
+              render_args args ^ " --- " ^ render_typ id1.it typs.it ^ "\n\n" ^ render_script ds
+             (* | FamD (id1 _, _, _)       -> render_typ id1.it ^ "\n\n" ^ render_script ds *)
              | _                         -> render_script ds (* Ignore other Definition constructors for now *)
 
 (* 

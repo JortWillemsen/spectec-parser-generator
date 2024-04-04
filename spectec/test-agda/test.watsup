@@ -2,11 +2,14 @@
 ;; Identifier notation
 ;;
 
-def $test_sub_ATOM_22(nat) : nat
-def $test_sub_ATOM_22(n_3_ATOM_y) = 0
+;; def $test_sub_ATOM_22(nat) : nat
+;; def $test_sub_ATOM_22(n_3_ATOM_y) = 0
 
-def $curried_(nat, nat) : nat
-def $curried_(n_1, n_2) = $(n_1 + n_2)
+;; def $curried_(nat, nat) : nat
+;; def $curried_(n_1, n_2) = $(n_1 + n_2)
+
+
+syntax N = nat
 
 syntax testfuse =
   | AB_ nat nat nat 
