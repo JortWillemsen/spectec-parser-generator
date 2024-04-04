@@ -13,13 +13,13 @@ syntax symsplit/2 hint(show sym) = ... | _LAST A_2
 
 syntax recorddots hint(show `...) = `...
 syntax record hint(show r) =
-  { FIELD_1 A_1 hint(show FIELD_ 1), \
-    FIELD_2 A_2 hint(show FIELD_ 2), \
+  { FIELD_1 A_1 hint(show FIELD_ 1), 
+    FIELD_2 A_2 hint(show FIELD_ 2), 
     DOTS recorddots hint(show !%) }
 
 syntax recordstar hint(show r) =
-  { FIELD_1 A_1* hint(show FIELD_ 1), \
-    FIELD_2 A_2* hint(show FIELD_ 2), \
+  { FIELD_1 A_1* hint(show FIELD_ 1), 
+    FIELD_2 A_2* hint(show FIELD_ 2), 
     DOTS recorddots hint(show !%) }
 
 syntax recordeq = recordstar `++ recordstar `= recordstar

@@ -50,7 +50,7 @@ def $E(N) : nat hint(show `E)
 def $E(N) = $expon(N)
 
 syntax fN(N) hint(desc "floating-point number") hint(show f#%) =
-  | POS fNmag(N)  hint(show $(+%)) \
+  | POS fNmag(N)  hint(show $(+%)) 
   | NEG fNmag(N)  hint(show $(-%))
 
 syntax fNmag(N) hint(desc "floating-point magnitude") hint(show f#%#mag) =
@@ -307,8 +307,8 @@ syntax testop_(inn) = EQZ
 
 syntax relop_(numtype)
 syntax relop_(inn) =
-  | EQ | NE \
-  | LT sx hint(show LT_#%) | GT sx hint(show GT_#%) \
+  | EQ | NE 
+  | LT sx hint(show LT_#%) | GT sx hint(show GT_#%) 
   | LE sx hint(show LE_#%) | GE sx hint(show GE_#%)
 syntax relop_(fnn) =
   | EQ | NE | LT | GT | LE | GE

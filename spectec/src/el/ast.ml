@@ -56,10 +56,10 @@ and typ' =
   | InfixT of typ * atom * typ   (* typ atom typ *)
   | BrackT of atom * typ * atom  (* ``` ([{ typ }]) *)
 
-and typfield = atom * (typ * prem nl_list) * hint list (* atom typ prem* hint* *)
-and typcase = atom * (typ * prem nl_list) * hint list  (* atom typ* prem* hint* *)
-and typcon = (typ * prem nl_list) * hint list          (* typ prem* *)
-and typenum = exp * exp option                         (* exp (`|` exp (`|` `...` `|` exp)?)* *)
+and typfield  = atom * (typ * prem nl_list) * hint list (* atom typ prem* hint* *)
+and typcase   = atom * (typ * prem nl_list) * hint list  (* atom typ* prem* hint* *)
+and typcon    = (typ * prem nl_list)        * hint list          (* typ prem* *)
+and typenum   = exp  * exp option                         (* exp (`|` exp (`|` `...` `|` exp)?)* *)
 
 
 (* Expressions *)

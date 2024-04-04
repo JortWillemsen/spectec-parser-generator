@@ -12,6 +12,7 @@ let version = "0.4"
 type target =
  | Check
  | Latex
+ | GenerateAgda
  | Prose
  | Splice of Backend_splice.Config.t
  | Interpreter of string list
@@ -110,24 +111,30 @@ let add_arg source =
 
 let pass_argspec pass : Arg.key * Arg.spec * Arg.doc =
   "--" ^ pass_flag pass, Arg.Unit (fun () -> enable_pass pass), " " ^ pass_desc pass
+  
+let empty_line = "", Arg.Unit (fun () -> ()), " " 
 
 let argspec = Arg.align
-[
+[ empty_line;
   "-v", Arg.Unit banner, " Show version";
   "-p", Arg.Unit (fun () -> file_kind := Patch), " Patch files";
   "-i", Arg.Set in_place, " Splice patch files in-place";
   "-d", Arg.Set dry, " Dry run (when -p) ";
   "-o", Arg.Unit (fun () -> file_kind := Output), " Output files";
   "-l", Arg.Set log, " Log execution steps";
+  empty_line;
   "-w", Arg.Unit (fun () -> warn_math := true; warn_prose := true),
     " Warn about unused or multiply used splices";
   "--warn-math", Arg.Set warn_math,
     " Warn about unused or multiply used math splices";
   "--warn-prose", Arg.Set warn_prose,
     " Warn about unused or multiply used prose splices";
-
+  empty_line;
   "--check", Arg.Unit (fun () -> target := Check), " Check only (default)";
   "--latex", Arg.Unit (fun () -> target := Latex), " Generate Latex";
+  (* ================== *)
+  "--generate-agda", Arg.Unit (fun () -> target := GenerateAgda), " Generate Agda AST and parser";
+  (* ================== *)
   "--splice-latex", Arg.Unit (fun () -> target := Splice Backend_splice.Config.latex),
     " Splice Sphinx";
   "--splice-sphinx", Arg.Unit (fun () -> target := Splice Backend_splice.Config.sphinx),
@@ -135,19 +142,21 @@ let argspec = Arg.align
   "--prose", Arg.Unit (fun () -> target := Prose), " Generate prose";
   "--interpreter", Arg.Rest_all (fun args -> target := Interpreter args),
     " Generate interpreter";
-
+  empty_line;
   "--print-el", Arg.Set print_el, " Print EL";
   "--print-il", Arg.Set print_elab_il, " Print IL (after elaboration)";
   "--print-final-il", Arg.Set print_final_il, " Print final IL";
   "--print-all-il", Arg.Set print_all_il, " Print IL after each step";
   "--print-al", Arg.Set print_al, " Print al";
   "--print-no-pos", Arg.Set print_no_pos, " Suppress position info in output";
+  empty_line;
 ] @ List.map pass_argspec all_passes @ [
+  empty_line;
   "--all-passes", Arg.Unit (fun () -> List.iter enable_pass all_passes)," Run all passes";
-
+  empty_line;
   "--test-version", Arg.Int (fun i -> Backend_interpreter.Construct.version := i), " The version of wasm, default to 3";
 
-  "-help", Arg.Unit ignore, "";
+  "-h", Arg.Unit ignore, "";
   "--help", Arg.Unit ignore, "";
 ]
 
@@ -176,7 +185,6 @@ let () =
       enable_pass Sideconditions; enable_pass Animate
     | _ -> ()
     );
-
     let il =
       List.fold_left (fun il pass ->
         if not (PS.mem pass !selected_passes) then il else
@@ -209,13 +217,21 @@ let () =
 
     (match !target with
     | Check -> ()
+    | GenerateAgda ->
+      log "Agda AST and Parser Generation...";
+      (match !odsts with
+      | []     -> print_endline (Backend_lbnf.Gen.gen_string el)
+      | [odst] -> Backend_lbnf.Gen.gen_file odst el
+      | _      -> prerr_endline "too many output file names";
+                  exit 2
+      )
 
     | Latex ->
       log "Latex Generation...";
       (match !odsts with
-      | [] -> print_endline (Backend_latex.Gen.gen_string el)
+      | []     -> print_endline (Backend_latex.Gen.gen_string el)
       | [odst] -> Backend_latex.Gen.gen_file odst el
-      | _ ->
+      | _      ->
         prerr_endline "too many output file names";
         exit 2
       )

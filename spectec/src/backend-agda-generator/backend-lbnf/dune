@@ -1,0 +1,6 @@
+(library
+  (name backend_lbnf)
+  (libraries util el frontend str)
+  (modules config render gen)
+  (flags (:standard -warn-error -A))
+)
